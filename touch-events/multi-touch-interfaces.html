@@ -105,7 +105,7 @@
             }
        });
        // Each member of tl should be a proper Touch object
-       for (var i=0; i < 1; i++) {
+       for (var i=0; i < tl.length; i++) {
            check_Touch_object(tl.item(i), element + "[" + i + "]");
        }
     }
@@ -175,7 +175,7 @@
         var test_mousedown = async_test("Interaction with mouse events");
 
         var touchstart_received = 0;
-        var touchmove_received = false;
+        var touchmove_received = 0;
         var touchend_received = false;
         var invalid_touchmove_received = false;
 
@@ -185,7 +185,7 @@
             if(!touchstart_received) {
                 // Check event ordering TA: 1.6.2
                 test_touchstart.step(function() {
-                    assert_false(touchmove_received, "touchstart precedes touchmove");
+                    assert_true(touchmove_received==0, "touchstart precedes touchmove");
                     assert_false(touchend_received, "touchstart precedes touchend");
                 });
                 test_touchstart.done();
@@ -199,17 +199,18 @@
         on_event(target0, "touchmove", function onTouchMove(ev) {
             ev.preventDefault();
 
-            if (touchmove_received)
-              return;
-            touchmove_received = true;
+            console.log("touchmove changedTouches " + ev.changedTouches.length +
+                        " touchmove_received " + touchmove_received);
+            if(!touchmove_received) {
+                test_touchmove.step(function() {
+                    assert_true(touchstart_received>0, "touchmove follows touchstart");
+                    assert_false(touchend_received, "touchmove precedes touchend");
+                });
+                test_touchmove.done();
+            }
 
-            test_touchmove.step(function() {
-                assert_true(touchstart_received>0, "touchmove follows touchstart");
-                assert_false(touchend_received, "touchmove precedes touchend");
-            });
-            test_touchmove.done();
-
-            check_TouchEvent(ev, touchstart_received);
+            if(++touchmove_received <= 2)
+                check_TouchEvent(ev, touchmove_received);
         });
 
         on_event(target1, "touchmove", function onTouchMove(ev) {
@@ -221,7 +222,7 @@
 
             test_touchend.step(function() {
                 assert_true(touchstart_received>0, "touchend follows touchstart");
-                assert_true(touchmove_received, "touchend follows touchmove");
+                assert_true(touchmove_received>0, "touchend follows touchmove");
                 assert_false(invalid_touchmove_received, "touchmove dispatched to correct target");
             });
             test_touchend.done();

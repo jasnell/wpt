@@ -63,13 +63,16 @@
 
     var report = new XMLHttpRequest();
     report.onload = reportTest.step_func(function () {
-
         var data = JSON.parse(report.responseText);
 
         if (data.error) {
           assert_equals("false", reportExists, data.error);
         } else {
-          if(reportExists != "" && reportExists == "false" && data["csp-report"]) {
+          if (reportExists != "" && reportExists == "false" && (
+              // for report-uri
+              data["csp-report"] ||
+                // for report-to
+                (data[0] != undefined && data[0]["body"] != undefined))) {
               assert_unreached("CSP report sent, but not expecting one");
           }
           // Firefox expands 'self' or origins in a policy to the actual origin value
